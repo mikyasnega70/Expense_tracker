@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, Numeric, String, DateTime, Date, ForeignKey
 from sqlalchemy.orm import relationship
+from sqlalchemy_utils import EmailType
 from sqlalchemy.sql import func
 from .database import Base
 
@@ -7,7 +8,7 @@ class Users(Base):
     __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True)
-    email = Column(String, unique=True)
+    email = Column(EmailType, unique=True)
     hashed_password = Column(String)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
