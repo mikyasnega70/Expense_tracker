@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from .database import engine
 from .models import Base
-from .router import auth, expenses
+from .router import auth, expenses, catagories, reports
 
 @asynccontextmanager
 async def lifespan(app:FastAPI):
@@ -21,5 +21,7 @@ async def test():
 
 app.include_router(auth.router)
 app.include_router(expenses.router)
+app.include_router(catagories.router)
+app.include_router(reports.router)
 
 
