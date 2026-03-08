@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Request, Depends
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from starlette import status
 from pydantic import BaseModel, EmailStr
@@ -7,6 +7,7 @@ from sqlalchemy import select
 from typing import Annotated
 from ..models import Users
 from ..database import Asyncsessionlocal
+from ..limiter import limiter
 from passlib.context import CryptContext
 from jose import jwt, JWTError
 from datetime import datetime, timedelta, timezone
@@ -60,7 +61,8 @@ async def get_current_user(db:db_dependency, token:Annotated[str, Depends(oauth2
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Invalid token')
 
 @router.post('/create', status_code=status.HTTP_201_CREATED)
-async def create_user(db:db_dependency, newUser:UserCreate):
+@limiter.limit('30/minute')
+async def create_user(db:db_dependency, request:Request, newUser:UserCreate):
     result = await db.scalars(select(Users).where(Users.email == newUser.email))
     user = result.first()
     if user:
@@ -74,7 +76,8 @@ async def create_user(db:db_dependency, newUser:UserCreate):
     await db.commit()
 
 @router.post('/token')
-async def login_access(db:db_dependency, form:Annotated[OAuth2PasswordRequestForm, Depends()]):
+@limiter.limit('30/minute')
+async def login_access(db:db_dependency, request:Request, form:Annotated[OAuth2PasswordRequestForm, Depends()]):
     result = await db.scalars(select(Users).where(Users.email == form.username))
     user = result.first()
     if not user:
