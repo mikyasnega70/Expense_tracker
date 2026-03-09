@@ -7,6 +7,7 @@ from datetime import date
 from ..database import Asyncsessionlocal
 from .auth import get_current_user
 from ..services import expense_service
+from ..utils import alert
 
 router = APIRouter(
     prefix='/expenses',
@@ -23,17 +24,19 @@ user_dependency = Annotated[dict, Depends(get_current_user)]
 class ExpenseCreate(BaseModel):
     amount: float
     description: str
-    date: str
+    date: date
 
 class ExpenseUpdate(BaseModel):
     amount:float
     description:str
-    date:str
+    date:date
     catagory_id:int
 
 @router.post('/{catagory_id}', status_code=status.HTTP_201_CREATED)
 async def create_expense(db:db_dependency, user:user_dependency, newexp:ExpenseCreate, catagory_id:int=Path(gt=0)):
+    alerts = await alert.send_alert(db, user, catagory_id)
     await expense_service.create_expense(db, user, newexp, catagory_id)
+    return alerts
 
 @router.get('/', status_code=status.HTTP_200_OK)
 async def get_expenses(db:db_dependency, user:user_dependency, start_date:date=Query(default=None), end_date:date=Query(default=None), catagory_id:int=None):
@@ -42,7 +45,7 @@ async def get_expenses(db:db_dependency, user:user_dependency, start_date:date=Q
 
 @router.get('/{expense_id}', status_code=status.HTTP_200_OK)
 async def single_response(db:db_dependency, user:user_dependency, expense_id:int=Path(gt=0)):
-    expenses = expense_service.list_expenses(db, user)
+    expenses = await expense_service.list_expenses(db, user)
     expense = next((exp for exp in expenses if exp.id == expense_id), None)
     if not expense:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Expense not found')

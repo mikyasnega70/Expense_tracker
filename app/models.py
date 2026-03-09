@@ -13,6 +13,7 @@ class Users(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     expenses = relationship('Expense', back_populates='user', cascade='all, delete-orphan')
+    budgets = relationship('Budget', back_populates='user', cascade='all, delete-orphan')
 
 class Catagory(Base):
     __tablename__ = 'catagories'
@@ -23,6 +24,7 @@ class Catagory(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     expenses = relationship('Expense', back_populates='catagory')
+    budget = relationship('Budget', back_populates='catagory', uselist=False, cascade='all, delete-orphan')
 
 class Expense(Base):
     __tablename__ = 'expenses'
@@ -37,6 +39,17 @@ class Expense(Base):
 
     user = relationship('Users', back_populates='expenses')
     catagory = relationship('Catagory', back_populates='expenses')
+
+class Budget(Base):
+    __tablename__ = 'budget'
+
+    id = Column(Integer, primary_key=True)
+    limit = Column(Numeric(10, 2))
+    user_id = Column(Integer, ForeignKey('users.id'))
+    catagory_id = Column(Integer, ForeignKey('catagories.id'))
+
+    user = relationship('Users', back_populates='budgets')
+    catagory = relationship('Catagory', back_populates='budget')
 
 
 

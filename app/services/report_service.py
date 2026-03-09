@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, extract
 from sqlalchemy.sql import func
-from ..models import Expense, Catagory
+from ..models import Expense, Catagory, Budget
 
 async def monthly_report(db:AsyncSession, user:dict, month, year):
     if not user:
@@ -15,6 +15,22 @@ async def monthly_report(db:AsyncSession, user:dict, month, year):
     total = sum(r['total'] for r in by_catagory)
 
     return {'total':total, 'by_catagory':by_catagory}
+
+async def set_budget(db:AsyncSession, user:dict, newbgt):
+    if not user:
+        raise HTTPException(status_code=401, detail='Unauthorized')
+    
+    catagory = await db.scalar(select(Catagory).where(Catagory.id == newbgt.catagory_id))
+    if not catagory:
+        raise HTTPException(status_code=404, detail='Catagory not found')
+    
+    budget = Budget(
+        limit=newbgt.limit,
+        user_id=user['id'],
+        catagory_id=newbgt.catagory_id
+    )
+    db.add(budget)
+    await db.commit()
 
 
 
